@@ -1,0 +1,249 @@
+<html>
+    <header>
+        <title>Reddit Video Editor</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+        <script src="//code.responsivevoice.org/responsivevoice.js?key=0rspTgyM"></script>
+        <link rel="stylesheet" type="text/css" href="stylesheet.css">
+    </header>
+    <body>
+        <div class="center">
+            <p><span id="name">loading </span><span id="info">loading</span><br><span id="changeThis"> loading</span></p>
+        </div>
+        <video id="video" preload="none" src="music.mp3"></video>
+        <video id="myVideo">
+          <source src="video.mp4" type="video/mp4">
+          Your browser does not support HTML5 video.
+        </video>
+    </body>
+    <script>
+        
+        
+        /*
+        
+        TODO: outro, give code comments
+        
+        */
+        
+        //Parameters for voice
+        var parameters = {
+        
+            onstart: voiceStartCallback,
+            onend: voiceEndCallback,
+            pitch: 1,
+            rate: 1
+        
+        }
+        var currentWord = [""];
+        var legacyWord = [];
+        var current = false;
+        var myAudio = document.getElementById("video");
+        var myVideo = document.getElementById("myVideo");
+        myVideo.volume = .1;
+        document.getElementById("myVideo").style.display = "none";
+        
+        //Reddit reply vars
+        var redditLink = null;
+        var result = null;
+        var replies = [];
+        var replyNum = 1;
+        const NUM_OF_ENTRIES = 25;
+        var first = true;
+        var second = false;
+        var name = document.getElementById("name");
+        var info = document.getElementById("info");
+        var infoNames = [];
+        var allReplies = "";
+        
+        //Changeable text
+        var textChange = document.getElementById("changeThis");
+        
+        //Ask user for Reddit link, converts it to get the UUID of the thread
+        redditLink = prompt("Please enter a Reddit link: ");
+        result = "https://old.reddit.com/r/AskReddit/comments/" + redditLink.slice(44, 50) + "/top.json?limit=100";
+        
+        
+        //Gets all the replies, then adds them
+        $.get(result, (data) => {
+            
+            //alert(data[1].data.children[0].data.permalink);
+            textChange.innerHTML = data[0].data.children[0].data.title;
+            document.getElementById("name").innerHTML = "[–] " + data[0].data.children[0].data.author + " ";
+            info.innerHTML = "" + data[0].data.children[0].data.ups + " points 1 day ago ";
+            responsiveVoice.speak(data[0].data.children[0].data.title, "UK English Male", parameters);
+            
+            for(var i = 0; i < NUM_OF_ENTRIES; i++) {
+                
+                //Just incase there's an undefined somehow
+                try {
+                    infoNames.push([Math.floor(Math.random() * 10000) + 1000, data[1].data.children[i].data.author]);
+                    replies.push(data[1].data.children[i].data.body);
+                    allReplies += " " + data[1].data.children[i].data.body;
+                } catch(error) {
+                    replies.pop();
+                }
+                
+            }
+                        
+        });
+        
+        function voiceStartCallback() {}
+        
+        function textCallback() {
+            
+            var testString = "";
+                for(var i = 0; i < legacyWord.length; i++) {
+                        
+                    testString += legacyWord[i];
+                        
+                    if(legacyWord[i] == currentWord[0]) {
+                            
+                        testString += "<span style='color: white;'>";
+                            
+                    }
+                        
+                }
+                testString += "</span>";
+                textChange.innerHTML = testString;
+            
+        }
+        
+        function voiceEndCallback() {
+            
+            if(first) {
+                
+                first = false;
+                second = true;
+                return;
+                
+            }
+            
+            if(second) {
+                
+                second = false;
+                document.getElementById("myVideo").style.display = "block";
+                myVideo.play();
+                    
+                setTimeout(function() {
+                        
+                    document.getElementById("myVideo").style.display = "none";
+                        
+                }, 1300);
+                
+            }
+            
+            if(replyNum > NUM_OF_ENTRIES) {
+                
+                alert();
+                
+            }
+            
+            textCallback();
+            
+            if(!current) {
+                
+                var str = replies[replyNum];
+                
+                str = str.replace(/(?:https?|ftp):\/\/[\n\S]+/g, '');
+              
+                while(str.indexOf("fuck") > 0) {
+                    str = str.replace("fuck", "duck");
+                }
+              
+                while(str.indexOf(".") > 0) {
+                    str = str.replace(".", ",");
+                }
+                                
+                currentWord = str.split(",");
+                current = true;
+                
+                legacyWord = str.split(",");
+                
+                setTimeout(function() {
+                    
+                    var testString = "";
+                    for(var i = 0; i < legacyWord.length; i++) {
+                        
+                        testString += legacyWord[i];
+                        
+                        if(legacyWord[i] == currentWord[0]) {
+                            
+                            testString += "<span style='color: white;'>";
+                            
+                        }
+                        
+                    }
+                    testString += "</span>";
+                    textChange.innerHTML = testString;
+                    document.getElementById("name").innerHTML = "[–] " + infoNames[replyNum][1] + " ";
+                    document.getElementById("info").innerHTML = "" + infoNames[replyNum][0] + " points 1 day ago ";
+                    
+                    responsiveVoice.speak(currentWord[0], "UK English Male", parameters);
+                    currentWord.shift();
+                    
+                }, 1000);
+            
+            } else {
+                
+                if(currentWord.length > 0) {
+                    
+                    responsiveVoice.speak(currentWord[0], "UK English Male", parameters);
+                    currentWord.shift();
+                    
+                } else {
+                    
+                    //In case I ever want to make it be random - 0.5 is 50%
+                    if(Math.random() >= .5) {
+                        document.getElementById("myVideo").style.display = "block";
+                        myVideo.play();
+                    }
+                    
+                    setTimeout(function() {
+                        
+                        document.getElementById("myVideo").style.display = "none";
+                        
+                    }, 1300);
+                    setTimeout(function() {
+                        
+                        current = false;
+                        currentWord = [];
+                        replyNum++;
+                        voiceEndCallback();
+                        
+                    }, 250);
+                    
+                }
+                
+            }
+        }
+        
+        myAudio.onended = function() {
+                myAudio = document.getElementById("video"); 
+                myAudio.volume = .2;
+                myAudio.addEventListener('ended', function() {
+                    this.currentTime = 10;
+                    this.volume = 200;
+                    this.play();
+                }, false);
+                myAudio.play();
+        };
+        
+        setTimeout(function() {
+            
+            voiceEndCallback();
+            setTimeout(function() {
+                
+                myAudio = document.getElementById("video"); 
+                myAudio.volume = .2;
+                myAudio.addEventListener('ended', function() {
+                    this.currentTime = 10;
+                    this.volume = 200;
+                    this.play();
+                }, false);
+                myAudio.play();
+                
+            }, 500);
+            
+        }, 1000);
+        
+    </script>
+</html>

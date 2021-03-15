@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<body>
+<video id="video" preload="none" src="music.mp3"></video>
+
+<script>
+  // Show loading animation.
+  var playPromise = document.getElementById("video").play();
+
+  if (playPromise !== undefined) {
+    playPromise.then(_ => {
+      // Automatic playback started!
+      // Show playing UI.
+    })
+    .catch(error => {
+      // Auto-play was prevented
+      // Show paused UI.
+        video.play();
+    });
+  }
+</script>
+</body>
+</html>
